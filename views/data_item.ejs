@@ -1,0 +1,54 @@
+<% if (val != null){ %>
+<tr>
+
+
+
+<% if (val.relations.user.attributes.room == index_room){%>
+
+
+<% if (index_user_name == val.relations.user.attributes.name ){%>
+    <!–右からの吹き出し–>
+<div align="right">    <%
+    var d = new Date(val.attributes.created_at);
+    var dstr = d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate()
+    + ' ' + d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds();
+    %><%= dstr %>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div>
+<div class="kaiwa"">
+ <figure class="kaiwa-img-right">
+ </figure>
+ <div class="kaiwa-text-left">
+   <p class="kaiwa-text">
+<%= val.attributes.message %>
+   </p>
+ </div>
+</div>
+
+
+<% } else { %>
+
+
+
+<!–左からの吹き出し –>
+&nbsp;&nbsp;<%= val.relations.user.attributes.name %>&nbsp;&nbsp;
+<%
+    var d = new Date(val.attributes.created_at);
+    var dstr = d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate()
+    + ' ' + d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds();
+    %><%= dstr %>
+<div class="kaiwa">
+<figure class="kaiwa-img-left">
+<img src="./images/<%= val.relations.user.attributes.img %>" >
+<figcaption class="kaiwa-img-description">
+</figcaption>
+</figure>
+<div class="kaiwa-text-right">
+<p class="kaiwa-text"><%= val.attributes.message %></p>
+</div>
+</div>
+
+<% } %>
+<% } %>
+
+
+
+<% } %>

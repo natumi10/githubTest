@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>My Teacher</title>
+   <link rel="stylesheet"
+    href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+  <link rel='stylesheet' href='/stylesheets/style.css' />
+      <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+
+</head>
+<body>
+  <head>
+    <h1>My Teacher</h1>
+  </head>
+  
+ 
+   <div role="main">
+    <h2>Welcome to <%= login.name %>.</h2>
+ 
+    <hr>
+ 
+  <div id="output"></div>
+  
+<script src="/socket.io/socket.io.js"></script>
+
+
+
+
+<script>
+var message_arr=[];
+
+function onButtonClick() {
+		  message_arr.push(document.forms.id_form1.id_textBox1.value);
+		  var data = message_arr;
+
+		  (function(){
+		  　　　　socket = io.connect("http://localhost:8888");
+		  　　　　socket.emit("my", {value:data,vi:'<%=login.name  %>'});
+		  })();
+}
+</script>
+
+
+
+
+	    <p><table style="width:95%;">
+      <% for(var i in collection) { %>
+        <%- include('data_item', {val:collection[i],index_user_name:login.name,index_room:login.room}) %>
+      <% } %>
+    </table></p>
+    <p>
+	<% if (pagination.page > 1) { %>
+	<span><a href="/<%= pagination.page - 1 %>">&lt;&lt; prev</a></span>
+	<% } else { %>
+	<span>&lt;&lt; prev</span>
+	<% } %>
+	｜
+	<% if (pagination.page < pagination.pageCount) { %>
+	<span><a href="/<%= pagination.page + 1 %>">Next &gt;&gt;</a></span>
+	<% } else { %>
+	<span>Next &gt;&gt;</span>
+	<% } %>
+    </p>
+  </div>
+  
+   <h1>WebSocket-Chat</h1>
+       <div class="container">
+        <h1>WebSocket-Chat</h1>
+  <form class="form-inline" id = "sent_form">
+            <div class="form-group">
+                <label class="roomLabel" for="rooms">部屋：</label>
+                <select class="form-control" id="rooms">
+                    <option value="room01">部屋01</option>
+                    <option value="room02">部屋02</option>
+                </select>
+                <label class="nameLabel" for="msgForm">名前：</label>
+                <input type="text" class="form-control" id="msgForm" value="">
+
+            </div>
+            <button type="submit" class="btn btn-primary" id="sendButton">入室</button>
+        </form>
+        <div id="chatLogs"></div>
+    </div>
+
+		 <script type="text/javascript">
+		socket = io.connect("http://localhost:8888");
+
+        //var socket = io.connect(); // C02. ソケットへの接続
+        var isEnter = false;
+        var name = '';
+		 var time_arr=[]; 
+		 var name_arr=[];
+		 <% var aaa = [];  %>
+
+        // C04. server_to_clientイベント・データを受信する
+        socket.on("server_to_client", function(data){appendMsg(data.value,data.name)});
+		
+
+       function appendMsg(text,get_name) {
+		    var d=new Date();
+			var dstr = d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate() + ' ' + d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds();
+
+		    var messagelist='';
+            message_arr.splice(0, 0, text);
+			name_arr.splice(0, 0, get_name);
+			
+			time_arr.splice(0, 0, dstr); // 1番目に挿入,何も削除性ない,time_data
+			
+			//iosoketのデータをチャットとして表示する箇所（ただし、データベースに格納する前に表示されてるもの）
+            for (var i=0; i<message_arr.length;i++){
+			   // <!–右からの吹き出し–>
+               if("<%= login.name %>" == name_arr[i] ){		
+		           messagelist += '<div align="right">' + time_arr[i] +'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<div class="kaiwa"">' +'<figure class="kaiwa-img-right"></figure>' +
+'<div class="kaiwa-text-left">'+ '<p class="kaiwa-text">' + message_arr[i] + '</p>' + '</div>' + '</div>';　
+				   
+				   
+				   
+				   
+                }else{
+				    messagelist += '<div align="left">' + '&nbsp;&nbsp;' + name_arr + '&nbsp;&nbsp;' +  time_arr[i] +'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<div class="kaiwa"">'+' <img src="./images/<%= collection[i].relations.user.attributes.img %>"'  + '<figure class="kaiwa-img-left"></figure>' +'<div class="kaiwa-text-right">'+ '<p class="kaiwa-text">' + message_arr[i] + '</p>' + '</div>' + '</div>';　
+			    }
+			
+			}
+            document.getElementById('output').innerHTML = messagelist;
+
+		  (function(){
+		         var time_data=new Date();
+
+		  　　　　socket.emit("my", {user_name:'<%=login.name  %>',login_id:'<%=login.id  %>',value:text,time:time_data});
+		  })();
+		
+        }
+ 
+        $("form").submit(function(e) {
+            var message = $("#msgForm").val();
+            var selectRoom = $("#rooms").val();
+            $("#msgForm").val('');
+            if (isEnter) {
+              message = "[" + name + "]: " + message;
+                // C03. client_to_serverイベント・データを送信する
+                socket.emit("client_to_server", {value : message,name:'<%= login.name  %>'});
+            } else {
+                name = message;
+                var entryMessage = name + "さんが入室しました。";
+                socket.emit("client_to_server_join", {value : selectRoom});
+                // C05. client_to_server_broadcastイベント・データを送信する
+                socket.emit("client_to_server_broadcast", {value : entryMessage});
+                // C06. client_to_server_personalイベント・データを送信する
+                socket.emit("client_to_server_personal", {value : name});
+                changeLabel();
+            }
+            e.preventDefault();
+        });
+ 
+        function changeLabel() {
+            $(".nameLabel").text("メッセージ：");
+            $("#rooms").prop("disabled", true);
+            $("button").text("送信");
+            isEnter = true;
+        }
+ 
+    </script>
+		
+  
+</body>
+</html>
